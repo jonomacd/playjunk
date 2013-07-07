@@ -7,22 +7,32 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"text/template"
 )
 
 var ConnectedClients map[string]*websocket.Conn = make(map[string]*websocket.Conn)
 var addr = flag.String("addr", ":8080", "http service address")
+var homeTempl *template.Template
 
 func main() {
 	log.Println("hello world")
 
+	rootDir := flag.String("dir", "../resources/", "resource directory")
+
 	flag.Parse()
 
-	//http.HandleFunc("/", homeHandler)
+	homeTempl = template.Must(template.ParseFiles(*rootDir + "canvasPage.html"))
+	http.Handle("/inc/", http.StripPrefix("/inc/", http.FileServer(http.Dir(*rootDir))))
+	http.HandleFunc("/", homeHandler)
 	http.Handle("/ws", websocket.Handler(initialize))
 	http.HandleFunc("/forward", forward)
 	if err := http.ListenAndServe(*addr, nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
+}
+
+func homeHandler(c http.ResponseWriter, req *http.Request) {
+	homeTempl.Execute(c, req.Host)
 }
 
 func initialize(ws *websocket.Conn) {
@@ -35,6 +45,7 @@ func initialize(ws *websocket.Conn) {
 		url.Values{"id": {u4.String()}})
 	if err != nil {
 		log.Println("error posting ::", err)
+		return
 	}
 
 	go func(sock *websocket.Conn) {
