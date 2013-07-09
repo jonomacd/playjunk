@@ -7,6 +7,21 @@ import (
 	"os"
 )
 
+var Images map[string]*Image
+
+func AddImage(path string) error {
+	i, err := NewImage(path)
+	if err != nil {
+		return err
+	}
+	if _, ok := Images[path]; !ok {
+		Images[path] = i
+	} else {
+		fmt.Errorf("Image already exists %s", path)
+	}
+	return nil
+}
+
 type Image struct {
 	Path            string
 	Size            geom.Rect
