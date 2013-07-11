@@ -8,11 +8,15 @@ import (
 	um "github.com/jonomacd/playjunk/usermanagement"
 )
 
+//TEMP FOR COMPILATION
 var _ object.Object
 var _ = image.Image{}
 var _ = um.User{}
 var _ = panel.Panel{}
+var thing object.Object = &panel.Panel{Alph: 6}
+
+//END TEMP
 
 func main() {
-	fmt.Println("Hello World!")
+	fmt.Println("Hello World!", thing.Alpha())
 }
