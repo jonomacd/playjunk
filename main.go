@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	cc "github.com/jonomacd/playjunk/clientconnection"
 	"github.com/jonomacd/playjunk/image"
 	"github.com/jonomacd/playjunk/object"
 	"github.com/jonomacd/playjunk/panel"
@@ -19,4 +20,6 @@ var thing object.Object = &panel.Panel{Alph: 6}
 
 func main() {
 	fmt.Println("Hello World!", thing.Alpha())
+	conErr := make(chan error)
+	cc.Connect(conErr)
 }
