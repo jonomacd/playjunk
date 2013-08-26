@@ -16,7 +16,7 @@ var homeTempl *template.Template
 
 func main() {
 	log.Println("hello world")
-
+	defer removeAllUsers()
 	rootDir := flag.String("dir", "../resources/", "resource directory")
 
 	flag.Parse()
@@ -48,33 +48,42 @@ func initialize(ws *websocket.Conn) {
 		return
 	}
 
-	go func(sock *websocket.Conn) {
-		for {
-			var message string
-			err = websocket.Message.Receive(sock, &message)
+	for {
+		var message string
+		err = websocket.Message.Receive(ws, &message)
 
-			if err != nil {
-				log.Println(err)
-				_, err := http.PostForm("http://localhost:8099/delete",
-					url.Values{"id": {u4.String()}})
-				if err != nil {
-					log.Println("error posting ::", err)
-				}
-				break
-			}
-
-			_, err = http.PostForm("http://localhost:8099/data",
-				url.Values{"id": {u4.String()}, "body": {message}})
+		if err != nil {
+			log.Println("receive on websocket error:", err)
+			err := removeUser(u4.String())
 			if err != nil {
 				log.Println("error posting ::", err)
 			}
+			break
 		}
-	}(ws)
+
+		_, err = http.PostForm("http://localhost:8099/data",
+			url.Values{"id": {u4.String()}, "body": {message}})
+		if err != nil {
+			log.Println("error posting ::", err)
+		}
+	}
 }
 
 func forward(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 	body := r.FormValue("body")
-
+	log.Println("the body", body)
 	ConnectedClients[id].Write([]byte(body))
+}
+
+func removeUser(id string) error {
+	_, err := http.PostForm("http://localhost:8099/delete",
+		url.Values{"id": {id}})
+	return err
+}
+
+func removeAllUsers() {
+	for id, _ := range ConnectedClients {
+		removeUser(id)
+	}
 }

@@ -1,6 +1,7 @@
 package panel
 
-import (
+/*import (
+	"github.com/jonomacd/playjunk/object"
 	"github.com/skelterjohn/geom"
 	"image"
 )
@@ -47,3 +48,12 @@ func (this *Panel) Image() *image.Image {
 func (this *Panel) Alpha() int {
 	return this.Alph
 }
+
+func (this *Panel) Equals(that Panel) bool {
+	return this.Position.Equals(that.Coord()) &&
+		this.Extent.Equals(that.Size()) &&
+		this.Depth == that.Z() &&
+		this.Alph == that.Alpha()
+
+}
+*/
