@@ -1,10 +1,10 @@
 package draw
 
 import (
-	"errors"
 	"github.com/jonomacd/playjunk/object"
 	"github.com/skelterjohn/geom"
 	"sort"
+	"fmt"
 )
 
 type By func(o1, o2 object.Object) bool
@@ -48,33 +48,37 @@ func SortObjects(o []object.Object) {
 	By(z).Sort(o)
 }
 
-func TranslateCoords(p *object.Panel, o object.Object) (*geom.Coord, error) {
-	if p.Panel() != nil {
-		return nil, errors.New("The given panel is not a base panel")
-	}
-	absCoord := *o.Coord()
-	pan := *o.Panel()
-	for !p.Equals(pan) {
-		absCoord = o.Panel().Coord().Plus(*o.Coord())
-		pan = *pan.Panel()
-	}
+func TranslateCoords(o object.Object) (*geom.Coord, error) {
+	pan := o.Panel()
+	coord := *o.Coord()
 
-	return &absCoord, nil
-}
-
-func FilterDirty(os []object.Object) {
-	for _, o := range os {
-		if o.Dirty() {
-			for _, do := range os {
-				if !do.Dirty() {
-					if Intersect(o, do) {
-						//set do to dirty
-
-					}
-				}
-			}
+	var err error
+	fmt.Printf("%+v \n", pan)
+	tries := 0
+	for  pan != nil {
+		fmt.Printf("%+v\n", pan)
+		coord = pan.Coord().Plus(coord)
+		pan = pan.Panel()
+		tries++
+		if tries >= object.MaxPanelDepth {
+			err = fmt.Errorf("Exceeded Max Panel Depth (possible circular panel path)")
+			break
 		}
 	}
+	return &coord, err
+}
+
+func FlattenObjects(os []object.Object) ([]object.Object, error){
+	for _, o := range os {
+		coord, err := TranslateCoords(o)
+		if err != nil {
+			return nil, err
+		}
+
+		o.SetCoord(coord)
+	}
+	return os, nil	
+
 }
 
 func Intersect(o1 object.Object, o2 object.Object) bool {

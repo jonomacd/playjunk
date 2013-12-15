@@ -50,15 +50,18 @@ if (window["WebSocket"]) {
     }
     conn.onmessage = function(evt) {
         var fromServ = evt.data;
-      
-        var servOb = JSON.parse(fromServ);
+        var servOb;
+        try{
+            servOb = JSON.parse(fromServ);
+        }catch(e){return}
+        
 	      servOb.sort(function(a,b){return a.DO-b.DO});
         
         c.width = c.width
 
       	for (var i = 0,len=servOb.length;i<len;i++)
       	{
-          
+          var objId = servOb[i].Id;
           if (servOb[i].Image != null && !(objId in images))
           {
            
@@ -68,7 +71,6 @@ if (window["WebSocket"]) {
               continue;
           }
 
-          var objId = servOb[i].Id;
           if (objId in images)
           {
             //noooooop

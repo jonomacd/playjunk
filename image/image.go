@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"github.com/skelterjohn/geom"
 	"image"
+	_ "image/gif"
+	_ "image/png"
+	_ "image/jpeg"
 	"os"
+	"strings"
 )
 
-var Images map[string]*Image
+var Images map[string]*Image = make(map[string]*Image)
 
 func AddImage(path string) error {
 	i, err := NewImage(path)
@@ -24,6 +28,7 @@ func AddImage(path string) error {
 
 type Image struct {
 	Path            string
+	Url				string
 	Size            geom.Rect
 	CellSize        geom.Rect
 	CellNumber      int
@@ -57,6 +62,7 @@ func (self *Image) AddAnimationGroup(name string, start int, end int, speed int)
 
 func NewImage(path string) (*Image, error) {
 	f, ferr := os.Open(path)
+	defer f.Close()
 	if ferr != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", ferr)
 		return nil, fmt.Errorf("Could not open image", ferr)
@@ -68,10 +74,13 @@ func NewImage(path string) (*Image, error) {
 
 	im := Image{}
 	im.Path = path
+	pathArr:=strings.Split(path, "/")
+	im.Url = "/inc/"+pathArr[len(pathArr)-1] 
+	fmt.Println(im.Url)
 	size := geom.Rect{}
 	size.Min = geom.Coord{X: 0, Y: 0}
 	size.Max = geom.Coord{X: float64(imConf.Width), Y: float64(imConf.Height)}
 	im.Size = size
-	f.Close()
+	
 	return &im, nil
 }

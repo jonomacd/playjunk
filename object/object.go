@@ -2,11 +2,14 @@ package object
 
 import (
 	"github.com/skelterjohn/geom"
-	"image"
+	"github.com/jonomacd/playjunk/image"
 )
+
+var MaxPanelDepth int = 100
 
 type Object interface {
 	Coord() *geom.Coord
+	SetCoord(coord *geom.Coord)
 	Size() *geom.Rect
 	Animate() bool
 	Panel() *Panel
@@ -15,6 +18,7 @@ type Object interface {
 	Alpha() int
 	Equals(o Object) bool
 	Dirty() bool
+	Visible() bool
 }
 
 type BlankObject struct {
@@ -23,42 +27,50 @@ type BlankObject struct {
 	BlankPanel *Panel
 }
 
-func (self BlankObject) Coord() *geom.Coord {
+func (self *BlankObject) Coord() *geom.Coord {
 	return self.BlankCoord
 }
 
-func (self BlankObject) Size() *geom.Rect {
+func (self *BlankObject) SetCoord(coord *geom.Coord)  {
+	self.BlankCoord = coord
+}
+
+func (self *BlankObject) Size() *geom.Rect {
 	return self.BlankSize
 }
 
-func (self BlankObject) Panel() *Panel {
+func (self *BlankObject) Panel() *Panel {
 	return self.BlankPanel
 }
 
-func (self BlankObject) Animate() bool {
+func (self *BlankObject) Animate() bool {
 	return false
 }
 
-func (self BlankObject) Z() int {
+func (self *BlankObject) Z() int {
 	return 0
 }
 
-func (self BlankObject) Image() *image.Image {
+func (self *BlankObject) Image() *image.Image {
 	return nil
 }
 
-func (self BlankObject) Alpha() int {
+func (self *BlankObject) Alpha() int {
 	return 0
 }
 
-func (self BlankObject) Dirty() bool {
+func (self *BlankObject) Dirty() bool {
 	return false
 }
 
-func (self BlankObject) Equals(o Object) bool {
+func (self *BlankObject) Equals(o Object) bool {
 	return o.Coord().Equals(self.Coord()) &&
 		o.Size().Equals(self.Size()) &&
 		o.Panel().Equals(o.Panel())
+}
+
+func (self *BlankObject) Visible() bool {
+	return false
 }
 
 type Panel struct {
@@ -77,41 +89,49 @@ func NewPanel() *Panel {
 	return p
 }
 
-func (this Panel) Coord() *geom.Coord {
+func (this *Panel) Coord() *geom.Coord {
 	return &this.Position
 }
 
-func (this Panel) Size() *geom.Rect {
+func (self *Panel) SetCoord(coord *geom.Coord)  {
+	self.Position = *coord
+}
+
+func (this *Panel) Size() *geom.Rect {
 	return &this.Extent
 }
 
-func (this Panel) Animate() bool {
+func (this *Panel) Animate() bool {
 	return false
 }
-func (this Panel) Panel() *Panel {
+func (this *Panel) Panel() *Panel {
 	return this.Pan
 }
 
-func (this Panel) Z() int {
+func (this *Panel) Z() int {
 	return this.Depth
 }
 
-func (this Panel) Image() *image.Image {
+func (this *Panel) Image() *image.Image {
 	return nil
 }
 
-func (this Panel) Alpha() int {
+func (this *Panel) Alpha() int {
 	return this.Alph
 }
 
-func (this Panel) Dirty() bool {
+func (this *Panel) Dirty() bool {
 	return false
 }
 
-func (this Panel) Equals(that Object) bool {
+func (this *Panel) Equals(that Object) bool {
 	return this.Position.Equals(that.Coord()) &&
 		this.Extent.Equals(that.Size()) &&
 		this.Depth == that.Z() &&
 		this.Alph == that.Alpha()
 
+}
+
+func (this *Panel) Visible() bool{
+	return false
 }
