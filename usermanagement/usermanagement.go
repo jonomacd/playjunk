@@ -2,9 +2,12 @@ package usermanagement
 
 import (
 	"fmt"
+	"github.com/jonomacd/playjunk/character"
 	"github.com/jonomacd/playjunk/draw"
+	"github.com/jonomacd/playjunk/image"
 	"github.com/jonomacd/playjunk/object"
 	pq "github.com/jonomacd/playjunk/priorityqueue"
+	rs "github.com/jonomacd/playjunk/rectanglestore"
 	"github.com/skelterjohn/geom"
 	"log"
 	"net/http"
@@ -12,22 +15,21 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/jonomacd/playjunk/image"
-	"github.com/jonomacd/playjunk/character"
 )
 
 var Usermap map[string]*User = make(map[string]*User)
 
 type User struct {
-	Id        string
-	Name      string
-	Dataqueue *pq.PriorityQueue
-	BasePanel *object.Panel
-	ds        []object.Object
+	Id              string
+	Name            string
+	Dataqueue       *pq.PriorityQueue
+	BasePanel       *object.Panel
+	ds              []object.Object
+	DirtyRectangles *rs.RectangleStore
 }
 
 func (self *User) Read(p []byte) (n int, err error) {
-	if self == nil{
+	if self == nil {
 		return 0, fmt.Errorf("User does not exist")
 	}
 	if self.Dataqueue != nil {
@@ -48,7 +50,7 @@ func (self *User) Write(p []byte) (n int, err error) {
 	if err != nil {
 		log.Println("error forwarding ::", err)
 		return 0, err
-	} 
+	}
 
 	return len(p), nil
 }
@@ -64,21 +66,42 @@ func (self *User) Draw() {
 func InsertUser(id string, name string) error {
 	u := &User{Id: id, Name: name}
 	if _, ok := Usermap[id]; !ok {
-		u.ds = make([]object.Object, 1)
+		u.ds = make([]object.Object, 2)
+		u.DirtyRectangles = rs.NewRectangleStore(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 500.0, Y: 500.0}}, &geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 10, Y: 10}})
+
 		mc := &character.MainCharacter{}
-		mc.CoordMC = &geom.Coord{}
-		mc.ImageMC = image.Images["/home/jono/code/go/home/src/github.com/jonomacd/playjunk/resources/ness.jpg"]
+		mc.CoordMC = &geom.Coord{X: 20, Y: 20}
+		mc.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/ness.jpg"]
 		mc.SizeMC = &mc.ImageMC.Size
-		u.ds[0] = mc
+
+		u.ds[1] = mc
+
+		u.DirtyRectangles.Add(mc.Size(), mc.Coord(), mc)
+		fmt.Println("added")
+		mc2 := &character.MainCharacter{}
+		mc2.CoordMC = &geom.Coord{}
+		mc2.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/paula.jpg"]
+		mc2.SizeMC = &mc2.ImageMC.Size
+		mc.ZMC = 5
+		u.ds[0] = mc2
+		u.DirtyRectangles.Add(mc2.Size(), mc2.Coord(), mc2)
+		fmt.Println("added")
+		mc3 := character.MainCharacter{}
+		u.DirtyRectangles.Add(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 100.0, Y: 50.0}}, &geom.Coord{X: 57, Y: 77}, mc3)
+		u.DirtyRectangles.Remove(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 100.0, Y: 50.0}}, &geom.Coord{X: 57, Y: 77}, mc3)
+
+		fmt.Printf("%+v\n", u.DirtyRectangles.Inside(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 50.0, Y: 50.0}}, &geom.Coord{X: 10, Y: 10}))
+		u.DirtyRectangles.Remove(mc.Size(), mc.Coord(), mc)
+		fmt.Printf("%+v\n", u.DirtyRectangles.Inside(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 50.0, Y: 50.0}}, &geom.Coord{X: 10, Y: 10}))
 		Usermap[id] = u
 		log.Println("User Added!", id)
-		
 
 		go CheckForData(id)
 		return nil
 	} else {
 		return fmt.Errorf("User Already Exists: %s: %s", id, name)
 	}
+	return nil
 }
 
 func DeleteUser(id string) error {
@@ -100,7 +123,7 @@ func CheckForData(id string) {
 		}
 		data := string(p[:n])
 		dataArr := strings.Split(data, ":")
-		
+
 		if len(dataArr) != 0 {
 			if dataArr[0] == "i" {
 				screensizeArr := strings.Split(dataArr[1], ",")
@@ -118,40 +141,31 @@ func CheckForData(id string) {
 			if dataArr[0] == "c" {
 				fmt.Println("Move ", dataArr[1])
 
-				if dataArr[1] == "down"{
+				if dataArr[1] == "down" {
 					crd := u.ds[0].Coord()
 					crd.Y = crd.Y + 3
 					u.ds[0].SetCoord(crd)
 				}
-				if dataArr[1] == "right"{
+				if dataArr[1] == "right" {
 					crd := u.ds[0].Coord()
 					crd.X = crd.X + 3
-					u.ds[0].SetCoord(crd)					
+					u.ds[0].SetCoord(crd)
 				}
-				if dataArr[1] == "left"{
+				if dataArr[1] == "left" {
 					crd := u.ds[0].Coord()
 					crd.X = crd.X - 3
-					u.ds[0].SetCoord(crd)				
+					u.ds[0].SetCoord(crd)
 				}
-				if dataArr[1] == "up"{
+				if dataArr[1] == "up" {
 					crd := u.ds[0].Coord()
 					crd.Y = crd.Y - 3
-					u.ds[0].SetCoord(crd)					
+					u.ds[0].SetCoord(crd)
 				}
 
-				Usermap[id].Write([]byte(`[{"Image":"`+u.ds[0].Image().Url+`", 
-					"Id":"M",
-					"SX":0,
-					"SY":0,
-					"SW":`+strconv.FormatFloat(u.ds[0].Image().Size.Max.X, 'f', 0, 64) +`,
-					"SH":`+strconv.FormatFloat(u.ds[0].Image().Size.Max.Y, 'f', 0, 64)+`,
-					"DX":`+strconv.FormatFloat(u.ds[0].Coord().X, 'f', 0, 64)+`,
-					"DY":`+strconv.FormatFloat(u.ds[0].Coord().Y, 'f', 0, 64)+`,
-					"DW":`+strconv.FormatFloat(u.ds[0].Image().Size.Max.X, 'f', 0, 64)+`,
-					"DH":`+strconv.FormatFloat(u.ds[0].Image().Size.Max.Y, 'f', 0, 64)+` }]`))
+				Usermap[id].Write(draw.MarshalToWire(u.ds))
 			}
 			if dataArr[0] == "im" {
-				Usermap[id].Write([]byte(`[{"Image":"`+u.ds[0].Image().Url+`", "Id":"M"}]`))
+				Usermap[id].Write([]byte(`[{"Image":"` + u.ds[0].Image().Url + `", "Id":"M"}]`))
 			}
 		}
 	}

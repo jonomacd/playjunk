@@ -1,10 +1,11 @@
 package draw
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/jonomacd/playjunk/object"
 	"github.com/skelterjohn/geom"
 	"sort"
-	"fmt"
 )
 
 type By func(o1, o2 object.Object) bool
@@ -55,7 +56,7 @@ func TranslateCoords(o object.Object) (*geom.Coord, error) {
 	var err error
 	fmt.Printf("%+v \n", pan)
 	tries := 0
-	for  pan != nil {
+	for pan != nil {
 		fmt.Printf("%+v\n", pan)
 		coord = pan.Coord().Plus(coord)
 		pan = pan.Panel()
@@ -68,7 +69,7 @@ func TranslateCoords(o object.Object) (*geom.Coord, error) {
 	return &coord, err
 }
 
-func FlattenObjects(os []object.Object) ([]object.Object, error){
+func FlattenObjects(os []object.Object) ([]object.Object, error) {
 	for _, o := range os {
 		coord, err := TranslateCoords(o)
 		if err != nil {
@@ -77,10 +78,33 @@ func FlattenObjects(os []object.Object) ([]object.Object, error){
 
 		o.SetCoord(coord)
 	}
-	return os, nil	
+	return os, nil
 
 }
 
 func Intersect(o1 object.Object, o2 object.Object) bool {
 	return true
+}
+
+func MarshalToWire(os []object.Object) []byte {
+	wireArr := make([]map[string]interface{}, len(os))
+	for ii, o := range os {
+		m := make(map[string]interface{})
+		m["Image"] = o.Image().Url
+		fmt.Println(m)
+		m["Id"] = o.Image().Url
+		m["SX"] = 0
+		m["SY"] = 0
+		m["SW"] = o.Image().Size.Max.X
+		m["SH"] = o.Image().Size.Max.Y
+		m["DX"] = o.Coord().X
+		m["DY"] = o.Coord().Y
+		m["DW"] = o.Image().Size.Max.X
+		m["DH"] = o.Image().Size.Max.Y
+
+		wireArr[ii] = m
+
+	}
+	b, _ := json.Marshal(wireArr)
+	return b
 }

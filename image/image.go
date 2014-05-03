@@ -5,8 +5,8 @@ import (
 	"github.com/skelterjohn/geom"
 	"image"
 	_ "image/gif"
-	_ "image/png"
 	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"strings"
 )
@@ -28,7 +28,7 @@ func AddImage(path string) error {
 
 type Image struct {
 	Path            string
-	Url				string
+	Url             string
 	Size            geom.Rect
 	CellSize        geom.Rect
 	CellNumber      int
@@ -62,11 +62,12 @@ func (self *Image) AddAnimationGroup(name string, start int, end int, speed int)
 
 func NewImage(path string) (*Image, error) {
 	f, ferr := os.Open(path)
-	defer f.Close()
 	if ferr != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", ferr)
-		return nil, fmt.Errorf("Could not open image", ferr)
+
+		return nil, fmt.Errorf("Could not open image %v", ferr)
 	}
+	defer f.Close()
 	imConf, _, err := image.DecodeConfig(f)
 	if err != nil {
 		return nil, fmt.Errorf("Could not decode image", err)
@@ -74,13 +75,13 @@ func NewImage(path string) (*Image, error) {
 
 	im := Image{}
 	im.Path = path
-	pathArr:=strings.Split(path, "/")
-	im.Url = "/inc/"+pathArr[len(pathArr)-1] 
+	pathArr := strings.Split(path, "/")
+	im.Url = "/inc/" + pathArr[len(pathArr)-1]
 	fmt.Println(im.Url)
 	size := geom.Rect{}
 	size.Min = geom.Coord{X: 0, Y: 0}
 	size.Max = geom.Coord{X: float64(imConf.Width), Y: float64(imConf.Height)}
 	im.Size = size
-	
+
 	return &im, nil
 }
