@@ -57,7 +57,7 @@ if (window["WebSocket"]) {
         
 	      servOb.sort(function(a,b){return a.DO-b.DO});
         
-        c.width = c.width
+        // c.width = c.width
 
       	for (var i = 0,len=servOb.length;i<len;i++)
       	{
@@ -68,7 +68,8 @@ if (window["WebSocket"]) {
               var drawing = new Image();
               drawing.src = servOb[i].Image; 
               images[servOb[i].Id] = drawing;
-              continue;
+              //conn.send("ack:"+objId)
+              //continue;
           }
 
           if (objId in images)

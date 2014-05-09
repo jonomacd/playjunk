@@ -66,7 +66,8 @@ func main() {
 	fmt.Printf("%+v, \n", os[0].Coord())
 	fmt.Printf("%+v, \n", os[1].Coord())
 
-	image.AddImage("/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/ness.jpg")
+	fmt.Println(image.AddImage("/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/Nice-blue-background-Desktop-Wallpaper.jpg"))
+	fmt.Println(image.AddImage("/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/iceKing.png"))
 	fmt.Println(image.AddImage("/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/paula.jpg"))
 
 	conErr := make(chan error)

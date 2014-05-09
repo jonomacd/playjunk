@@ -7,7 +7,6 @@ import (
 	"github.com/jonomacd/playjunk/image"
 	"github.com/jonomacd/playjunk/object"
 	pq "github.com/jonomacd/playjunk/priorityqueue"
-	rs "github.com/jonomacd/playjunk/rectanglestore"
 	"github.com/skelterjohn/geom"
 	"log"
 	"net/http"
@@ -20,20 +19,27 @@ import (
 var Usermap map[string]*User = make(map[string]*User)
 
 type User struct {
-	Id              string
-	Name            string
-	Dataqueue       *pq.PriorityQueue
-	BasePanel       *object.Panel
-	ds              []object.Object
-	DirtyRectangles *rs.RectangleStore
+	Id          string
+	Name        string
+	UserState   *State
+	UserContext *Context
+}
+
+type State struct {
+	DrawState *draw.DrawState
+	GameState string // TODO build the game state
+}
+
+type Context struct {
+	Dataqueue *pq.PriorityQueue
 }
 
 func (self *User) Read(p []byte) (n int, err error) {
 	if self == nil {
 		return 0, fmt.Errorf("User does not exist")
 	}
-	if self.Dataqueue != nil {
-		n = copy(p, []byte(self.Dataqueue.Pop().(*pq.Item).Value))
+	if self.UserContext.Dataqueue != nil {
+		n = copy(p, []byte(self.UserContext.Dataqueue.Pop().(*pq.Item).Value))
 		p = p[:n]
 		if n == 0 {
 			return n, nil
@@ -64,38 +70,56 @@ func (self *User) Draw() {
 }
 
 func InsertUser(id string, name string) error {
-	u := &User{Id: id, Name: name}
+
 	if _, ok := Usermap[id]; !ok {
-		u.ds = make([]object.Object, 2)
-		u.DirtyRectangles = rs.NewRectangleStore(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 500.0, Y: 500.0}}, &geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 10, Y: 10}})
+
+		u := &User{Id: id, Name: name}
+
+		u.UserContext = &Context{}
+		// Set up the data queue
+		u.UserContext.Dataqueue = pq.NewPriorityQueue()
+
+		u.UserState = &State{}
+		// Set up the draw state
+		u.UserState.DrawState = draw.NewDrawState()
+
+		bg := &character.MainCharacter{}
+		bg.IdMC = "background"
+		bg.CoordMC = &geom.Coord{X: 0, Y: 0}
+		bg.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/Nice-blue-background-Desktop-Wallpaper.jpg"]
+		bg.SizeMC = &bg.ImageMC.Size
+		bg.ZMC = 0
+		bg.PreviousLoc = bg.SizeMC
+		bg.DirtyMC = true
+		fmt.Printf("%+v\n", bg.Size())
+		u.UserState.DrawState.Add(bg)
 
 		mc := &character.MainCharacter{}
+		mc.IdMC = "Kirby"
 		mc.CoordMC = &geom.Coord{X: 20, Y: 20}
-		mc.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/ness.jpg"]
+		mc.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/iceKing.png"]
 		mc.SizeMC = &mc.ImageMC.Size
+		mc.ZMC = 1
+		mc.PreviousLoc = mc.SizeMC
+		mc.DirtyMC = false
+		u.UserState.DrawState.Add(mc)
 
-		u.ds[1] = mc
-
-		u.DirtyRectangles.Add(mc.Size(), mc.Coord(), mc)
-		fmt.Println("added")
 		mc2 := &character.MainCharacter{}
+		mc2.IdMC = "Paula"
 		mc2.CoordMC = &geom.Coord{}
 		mc2.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/paula.jpg"]
 		mc2.SizeMC = &mc2.ImageMC.Size
-		mc.ZMC = 5
-		u.ds[0] = mc2
-		u.DirtyRectangles.Add(mc2.Size(), mc2.Coord(), mc2)
-		fmt.Println("added")
-		mc3 := character.MainCharacter{}
-		u.DirtyRectangles.Add(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 100.0, Y: 50.0}}, &geom.Coord{X: 57, Y: 77}, mc3)
-		u.DirtyRectangles.Remove(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 100.0, Y: 50.0}}, &geom.Coord{X: 57, Y: 77}, mc3)
+		mc2.ZMC = 5
+		mc2.PreviousLoc = mc2.SizeMC
+		mc2.DirtyMC = true
+		u.UserState.DrawState.Add(mc2)
 
-		fmt.Printf("%+v\n", u.DirtyRectangles.Inside(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 50.0, Y: 50.0}}, &geom.Coord{X: 10, Y: 10}))
-		u.DirtyRectangles.Remove(mc.Size(), mc.Coord(), mc)
-		fmt.Printf("%+v\n", u.DirtyRectangles.Inside(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 50.0, Y: 50.0}}, &geom.Coord{X: 10, Y: 10}))
+		// Initialize the game state (TODO)
+		u.UserState.GameState = "Not Implemented"
+
 		Usermap[id] = u
 		log.Println("User Added!", id)
-
+		time.Sleep(1 * time.Second)
 		go CheckForData(id)
 		return nil
 	} else {
@@ -105,6 +129,8 @@ func InsertUser(id string, name string) error {
 }
 
 func DeleteUser(id string) error {
+
+	// Todo Probaly need clean up a lot of junk when users leave
 	delete(Usermap, id)
 	log.Println("User Removed:", id)
 	return nil
@@ -112,6 +138,8 @@ func DeleteUser(id string) error {
 
 func CheckForData(id string) {
 	var p = make([]byte, 40)
+	u := Usermap[id]
+	Usermap[id].Write(u.UserState.DrawState.MarshalToWire())
 	for {
 		time.Sleep(10 * time.Millisecond)
 		n, err := Usermap[id].Read(p)
@@ -130,42 +158,46 @@ func CheckForData(id string) {
 
 				x, _ := strconv.Atoi(screensizeArr[0])
 				y, _ := strconv.Atoi(screensizeArr[1])
-				Usermap[id].BasePanel = object.NewPanel()
-				Usermap[id].BasePanel.Extent = geom.Rect{Min: geom.Coord{X: 0, Y: 0}, Max: geom.Coord{X: float64(x), Y: float64(y)}}
+				Usermap[id].UserState.DrawState.BasePanel = object.NewPanel()
+				Usermap[id].UserState.DrawState.BasePanel.Extent = geom.Rect{Min: geom.Coord{X: 0, Y: 0}, Max: geom.Coord{X: float64(x), Y: float64(y)}}
 
-				fmt.Printf("Updated Screen Size %+v\n", Usermap[id].BasePanel)
+				fmt.Printf("Updated Screen Size %+v\n", Usermap[id].UserState.DrawState.BasePanel)
 			}
-
-			u := Usermap[id]
 
 			if dataArr[0] == "c" {
 				fmt.Println("Move ", dataArr[1])
+				ob := u.UserState.DrawState.Objects["Paula"]
 
 				if dataArr[1] == "down" {
-					crd := u.ds[0].Coord()
-					crd.Y = crd.Y + 3
-					u.ds[0].SetCoord(crd)
+					crd := ob.Coord().Y
+					crd += 3
+					ob.SetCoord(&geom.Coord{X: ob.Coord().X, Y: crd})
+					u.UserState.DrawState.Objects["Paula"].(*character.MainCharacter).ZMC = 1
+					ob.(*character.MainCharacter).ZMC = 5
 				}
 				if dataArr[1] == "right" {
-					crd := u.ds[0].Coord()
-					crd.X = crd.X + 3
-					u.ds[0].SetCoord(crd)
+					crd := ob.Coord().X
+					crd += 3
+					ob.SetCoord(&geom.Coord{X: crd, Y: ob.Coord().Y})
+					u.UserState.DrawState.Objects["Paula"].(*character.MainCharacter).ZMC = 5
+					ob.(*character.MainCharacter).ZMC = 1
 				}
 				if dataArr[1] == "left" {
-					crd := u.ds[0].Coord()
-					crd.X = crd.X - 3
-					u.ds[0].SetCoord(crd)
+					crd := ob.Coord().X
+					crd += -3
+					ob.SetCoord(&geom.Coord{X: crd, Y: ob.Coord().Y})
 				}
 				if dataArr[1] == "up" {
-					crd := u.ds[0].Coord()
-					crd.Y = crd.Y - 3
-					u.ds[0].SetCoord(crd)
+					crd := ob.Coord().Y
+					crd += -3
+					ob.SetCoord(&geom.Coord{X: ob.Coord().X, Y: crd})
 				}
 
-				Usermap[id].Write(draw.MarshalToWire(u.ds))
+				Usermap[id].Write(u.UserState.DrawState.MarshalToWire())
+
 			}
 			if dataArr[0] == "im" {
-				Usermap[id].Write([]byte(`[{"Image":"` + u.ds[0].Image().Url + `", "Id":"M"}]`))
+				Usermap[id].Write([]byte(`[{"Image":"` + u.UserState.DrawState.Objects["Ness"].Image().Url + `", "Id":"M"}]`))
 			}
 		}
 	}

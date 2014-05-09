@@ -39,7 +39,9 @@ func NewRectangleStore(box *geom.Rect, innerBox *geom.Rect) *RectangleStore {
 			rs.Values[ii][jj] = make([]interface{}, InitialSize)
 		}
 	}
-
+	fmt.Printf("rectangles: %+v, %+v \n", len(rs.Values), len(rs.Values[0]))
+	fmt.Printf("box: %v\n", box)
+	fmt.Printf("inbox: %v\n", innerBox)
 	return rs
 }
 
@@ -61,7 +63,11 @@ func (rs *RectangleStore) Add(box *geom.Rect, coord *geom.Coord, i interface{}) 
 
 	for ii := startX; ii <= endX; ii++ {
 		for jj := startY; jj <= endY; jj++ {
-			fmt.Printf("%v, %v :: %v, %v\n", ii, jj, len(rs.Values), len(rs.Values[ii]))
+
+			if ii < 0 || jj < 0 || ii >= len(rs.Values) || jj >= len(rs.Values[0]) {
+				continue
+			}
+			//	fmt.Printf("%v, %v :: %v, %v\n", ii, jj, len(rs.Values), len(rs.Values[ii]))
 			rs.Values[ii][jj] = append(rs.Values[ii][jj], i)
 		}
 	}
@@ -84,6 +90,11 @@ func (rs *RectangleStore) Remove(box *geom.Rect, coord *geom.Coord, i interface{
 
 	for ii := startX; ii < endX; ii++ {
 		for jj := startY; jj < endY; jj++ {
+
+			if ii < 0 || jj < 0 || ii > len(rs.Values) || jj > len(rs.Values[0]) {
+				continue
+			}
+
 			for kk, toDel := range rs.Values[ii][jj] {
 				if toDel == i {
 					fmt.Println("removed")
@@ -113,7 +124,10 @@ func (rs *RectangleStore) Inside(box *geom.Rect, coord *geom.Coord) []interface{
 	dupMap := make(map[interface{}]bool)
 	for ii := startX; ii < endX; ii++ {
 		for jj := startY; jj < endY; jj++ {
-
+			//fmt.Printf("Index %v, %v\n", ii, jj)
+			if ii < 0 || jj < 0 || ii >= len(rs.Values) || jj >= len(rs.Values[0]) {
+				continue
+			}
 			for _, val := range rs.Values[ii][jj] {
 				if val != nil && !dupMap[val] {
 					dupMap[val] = true

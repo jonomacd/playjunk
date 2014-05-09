@@ -1,9 +1,9 @@
 package clientconnection
 
 import (
+	"fmt"
 	pq "github.com/jonomacd/playjunk/priorityqueue"
 	um "github.com/jonomacd/playjunk/usermanagement"
-	//"log"
 	"net/http"
 )
 
@@ -19,14 +19,24 @@ func Connect(errChan chan error) {
 }
 
 func data(w http.ResponseWriter, r *http.Request) {
-	if um.Usermap[r.FormValue("id")].Dataqueue == nil {
-		um.Usermap[r.FormValue("id")].Dataqueue = pq.NewPriorityQueue()
+	if um.Usermap[r.FormValue("id")] != nil {
+		if um.Usermap[r.FormValue("id")].UserContext != nil {
+			if um.Usermap[r.FormValue("id")].UserContext.Dataqueue == nil {
+				um.Usermap[r.FormValue("id")].UserContext.Dataqueue = pq.NewPriorityQueue()
+			}
+		} else {
+			return
+		}
+	} else {
+		return
 	}
-	um.Usermap[r.FormValue("id")].Dataqueue.Push(
+	um.Usermap[r.FormValue("id")].UserContext.Dataqueue.Push(
 		&pq.Item{
 			Value:    r.FormValue("body"),
 			Priority: defaultpriority,
 		})
+
+	fmt.Println("handler returning")
 }
 
 func removeUser(w http.ResponseWriter, r *http.Request) {
@@ -34,5 +44,6 @@ func removeUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func newUser(w http.ResponseWriter, r *http.Request) {
+
 	um.InsertUser(r.FormValue("id"), "")
 }

@@ -1,13 +1,14 @@
 package object
 
 import (
-	"github.com/skelterjohn/geom"
 	"github.com/jonomacd/playjunk/image"
+	"github.com/skelterjohn/geom"
 )
 
 var MaxPanelDepth int = 100
 
 type Object interface {
+	Id() string
 	Coord() *geom.Coord
 	SetCoord(coord *geom.Coord)
 	Size() *geom.Rect
@@ -19,19 +20,26 @@ type Object interface {
 	Equals(o Object) bool
 	Dirty() bool
 	Visible() bool
+	Previous() *geom.Rect
+	ClearDirty()
 }
 
 type BlankObject struct {
+	BlankId    string
 	BlankCoord *geom.Coord
 	BlankSize  *geom.Rect
 	BlankPanel *Panel
+}
+
+func (self *BlankObject) Id() string {
+	return self.BlankId
 }
 
 func (self *BlankObject) Coord() *geom.Coord {
 	return self.BlankCoord
 }
 
-func (self *BlankObject) SetCoord(coord *geom.Coord)  {
+func (self *BlankObject) SetCoord(coord *geom.Coord) {
 	self.BlankCoord = coord
 }
 
@@ -73,12 +81,20 @@ func (self *BlankObject) Visible() bool {
 	return false
 }
 
+func (self *BlankObject) Previous() *geom.Rect {
+	return self.BlankSize
+}
+
+func (self *BlankObject) ClearDirty() {}
+
 type Panel struct {
-	Position geom.Coord
-	Extent   geom.Rect
-	Depth    int
-	Alph     int
-	Pan      *Panel
+	Position    geom.Coord
+	Extent      geom.Rect
+	Depth       int
+	Alph        int
+	Pan         *Panel
+	PanelId     string
+	PreviousLoc *geom.Rect
 }
 
 func NewPanel() *Panel {
@@ -89,11 +105,15 @@ func NewPanel() *Panel {
 	return p
 }
 
+func (this *Panel) Id() string {
+	return this.PanelId
+}
+
 func (this *Panel) Coord() *geom.Coord {
 	return &this.Position
 }
 
-func (self *Panel) SetCoord(coord *geom.Coord)  {
+func (self *Panel) SetCoord(coord *geom.Coord) {
 	self.Position = *coord
 }
 
@@ -132,6 +152,12 @@ func (this *Panel) Equals(that Object) bool {
 
 }
 
-func (this *Panel) Visible() bool{
+func (this *Panel) Visible() bool {
 	return false
 }
+
+func (this *Panel) Previous() *geom.Rect {
+	return this.PreviousLoc
+}
+
+func (this *Panel) ClearDirty() {}

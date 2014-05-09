@@ -61,11 +61,12 @@ func initialize(ws *websocket.Conn) {
 			break
 		}
 
-		_, err = http.PostForm("http://localhost:8099/data",
+		rsp, err := http.PostForm("http://localhost:8099/data",
 			url.Values{"id": {u4.String()}, "body": {message}})
 		if err != nil {
 			log.Println("error posting ::", err)
 		}
+		rsp.Body.Close()
 	}
 }
 

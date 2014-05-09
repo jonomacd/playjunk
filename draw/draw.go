@@ -4,9 +4,50 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jonomacd/playjunk/object"
+	rs "github.com/jonomacd/playjunk/rectanglestore"
 	"github.com/skelterjohn/geom"
 	"sort"
 )
+
+/*const (
+	InitalObjectSize = 20
+)*/
+
+var DirtyResolution *geom.Rect = &geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 10, Y: 10}}
+
+type DrawState struct {
+	objectArr []object.Object
+	Dirty     *rs.RectangleStore
+	BasePanel *object.Panel
+	Objects   map[string]object.Object
+}
+
+func NewDrawState() *DrawState {
+	ds := &DrawState{
+		objectArr: make([]object.Object, 0),
+		Dirty:     rs.NewRectangleStore(&geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 2000.0, Y: 3000.0}}, &geom.Rect{Min: geom.Coord{}, Max: geom.Coord{X: 10, Y: 10}}),
+		BasePanel: object.NewPanel(),
+		Objects:   make(map[string]object.Object),
+	}
+	return ds
+}
+
+func (ds *DrawState) Add(o object.Object) error {
+
+	// Must have an Id to add an object
+	if len(o.Id()) == 0 {
+		return fmt.Errorf("Cannot add object: ID not set")
+	}
+
+	// Add to users map store
+	ds.Objects[o.Id()] = o
+
+	// Add to users array object store
+	ds.objectArr = append(ds.objectArr, o)
+
+	// Add to objects Dirty array
+	return ds.Dirty.Add(o.Size(), o.Coord(), o)
+}
 
 type By func(o1, o2 object.Object) bool
 
@@ -86,21 +127,74 @@ func Intersect(o1 object.Object, o2 object.Object) bool {
 	return true
 }
 
-func MarshalToWire(os []object.Object) []byte {
+type DrawObject struct {
+	object.Object
+	sx   int
+	sy   int
+	size *geom.Rect
+}
+
+func (ds *DrawState) GetDrawSet() []*DrawObject {
+	objects := make([]*DrawObject, 0)
+	dupmap := make(map[string]bool)
+	for _, obj := range ds.objectArr {
+		if obj.Dirty() {
+
+			do := &DrawObject{}
+			do.Object = obj
+			do.size = obj.Size()
+			objects = append(objects, do)
+			dupmap[obj.Id()] = true
+			todraw := ds.Dirty.Inside(obj.Size(), obj.Coord())
+			for _, interObj := range todraw {
+				objCast := interObj.(object.Object)
+				if !dupmap[objCast.Id()] && !objCast.Dirty() {
+
+					x1 := obj.Previous().Min.X
+					y1 := obj.Previous().Min.Y
+
+					x2 := objCast.Coord().X
+					y2 := objCast.Coord().Y
+
+					x := int(x1 - x2)
+					y := int(y1 - y2)
+					do := &DrawObject{}
+					do.Object = objCast
+					do.sx = x
+					do.sy = y
+					do.size = obj.Previous()
+
+					objects = append(objects, do)
+					dupmap[objCast.Id()] = true
+				}
+			}
+			obj.ClearDirty()
+		}
+	}
+	return objects
+}
+
+//func
+
+func (ds *DrawState) MarshalToWire() []byte {
+
+	os := ds.GetDrawSet()
 	wireArr := make([]map[string]interface{}, len(os))
 	for ii, o := range os {
+		fmt.Println("Drawing: ", o.Id())
 		m := make(map[string]interface{})
 		m["Image"] = o.Image().Url
 		fmt.Println(m)
 		m["Id"] = o.Image().Url
-		m["SX"] = 0
-		m["SY"] = 0
-		m["SW"] = o.Image().Size.Max.X
-		m["SH"] = o.Image().Size.Max.Y
-		m["DX"] = o.Coord().X
-		m["DY"] = o.Coord().Y
-		m["DW"] = o.Image().Size.Max.X
-		m["DH"] = o.Image().Size.Max.Y
+		m["SX"] = o.sx
+		m["SY"] = o.sy
+		m["SW"] = int(o.size.Width())
+		m["SH"] = int(o.size.Height())
+		m["DX"] = int(o.Coord().X) + o.sx
+		m["DY"] = int(o.Coord().Y) + o.sy
+		m["DW"] = int(o.size.Width())
+		m["DH"] = int(o.size.Height())
+		m["DO"] = o.Z()
 
 		wireArr[ii] = m
 
