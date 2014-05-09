@@ -48,7 +48,10 @@ func initialize(ws *websocket.Conn) {
 		log.Println("error posting ::", err)
 		return
 	}
-
+	tr := &http.Transport{
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: tr}
 	for {
 		var message string
 		err = websocket.Message.Receive(ws, &message)
@@ -62,7 +65,7 @@ func initialize(ws *websocket.Conn) {
 			break
 		}
 
-		rsp, err = http.PostForm("http://localhost:8099/data",
+		rsp, err = client.PostForm("http://localhost:8099/data",
 			url.Values{"id": {u4.String()}, "body": {message}})
 		if err != nil {
 			log.Println("error posting ::", err)
