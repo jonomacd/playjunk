@@ -86,7 +86,7 @@ func InsertUser(id string, name string) error {
 		bg := &character.MainCharacter{}
 		bg.IdMC = "background"
 		bg.CoordMC = &geom.Coord{X: 0, Y: 0}
-		bg.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/Nice-blue-background-Desktop-Wallpaper.jpg"]
+		bg.ImageMC = image.Images["resources/Nice-blue-background-Desktop-Wallpaper.jpg"]
 		bg.SizeMC = &bg.ImageMC.Size
 		bg.ZMC = 0
 		bg.PreviousLoc = bg.SizeMC
@@ -97,7 +97,7 @@ func InsertUser(id string, name string) error {
 		mc := &character.MainCharacter{}
 		mc.IdMC = "Kirby"
 		mc.CoordMC = &geom.Coord{X: 20, Y: 20}
-		mc.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/iceKing.png"]
+		mc.ImageMC = image.Images["resources/iceKing.png"]
 		mc.SizeMC = &mc.ImageMC.Size
 		mc.ZMC = 1
 		mc.PreviousLoc = mc.SizeMC
@@ -107,7 +107,7 @@ func InsertUser(id string, name string) error {
 		mc2 := &character.MainCharacter{}
 		mc2.IdMC = "Paula"
 		mc2.CoordMC = &geom.Coord{}
-		mc2.ImageMC = image.Images["/home/jonomacd/go/src/github.com/jonomacd/playjunk/resources/paula.jpg"]
+		mc2.ImageMC = image.Images["resources/paula.jpg"]
 		mc2.SizeMC = &mc2.ImageMC.Size
 		mc2.ZMC = 5
 		mc2.PreviousLoc = mc2.SizeMC
