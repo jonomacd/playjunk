@@ -8,6 +8,7 @@ import (
 	"github.com/jonomacd/playjunk/object"
 	pq "github.com/jonomacd/playjunk/priorityqueue"
 	"github.com/skelterjohn/geom"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -57,6 +58,7 @@ func (self *User) Write(p []byte) (n int, err error) {
 	client := &http.Client{Transport: tr}
 	rsp, err := client.PostForm("http://localhost:8080/forward",
 		url.Values{"id": {self.Id}, "body": {string(p)}})
+	ioutil.ReadAll(rsp.Body)
 	rsp.Body.Close()
 	if err != nil {
 		log.Println("error forwarding ::", err)

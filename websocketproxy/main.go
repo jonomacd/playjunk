@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"flag"
 	uuid "github.com/nu7hatch/gouuid"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -70,6 +71,7 @@ func initialize(ws *websocket.Conn) {
 		if err != nil {
 			log.Println("error posting ::", err)
 		}
+		ioutil.ReadAll(rsp.Body)
 		rsp.Body.Close()
 	}
 }
