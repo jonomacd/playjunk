@@ -41,8 +41,9 @@ func initialize(ws *websocket.Conn) {
 	if err != nil {
 		log.Println("error id'ing ::", err)
 	}
-	_, err = http.PostForm("http://localhost:8099/new",
+	rsp, err := http.PostForm("http://localhost:8099/new",
 		url.Values{"id": {u4.String()}})
+	rsp.Body.Close()
 	if err != nil {
 		log.Println("error posting ::", err)
 		return
@@ -61,7 +62,7 @@ func initialize(ws *websocket.Conn) {
 			break
 		}
 
-		rsp, err := http.PostForm("http://localhost:8099/data",
+		rsp, err = http.PostForm("http://localhost:8099/data",
 			url.Values{"id": {u4.String()}, "body": {message}})
 		if err != nil {
 			log.Println("error posting ::", err)
@@ -78,8 +79,10 @@ func forward(w http.ResponseWriter, r *http.Request) {
 }
 
 func removeUser(id string) error {
-	_, err := http.PostForm("http://localhost:8099/delete",
+	rsp, err := http.PostForm("http://localhost:8099/delete",
 		url.Values{"id": {id}})
+
+	rsp.Body.Close()
 	return err
 }
 
