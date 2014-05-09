@@ -51,7 +51,11 @@ func (self *User) Read(p []byte) (n int, err error) {
 }
 
 func (self *User) Write(p []byte) (n int, err error) {
-	rsp, err := http.PostForm("http://localhost:8080/forward",
+	tr := &http.Transport{
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: tr}
+	rsp, err := client.PostForm("http://localhost:8080/forward",
 		url.Values{"id": {self.Id}, "body": {string(p)}})
 	rsp.Body.Close()
 	if err != nil {
