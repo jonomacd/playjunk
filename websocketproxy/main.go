@@ -65,11 +65,12 @@ func initialize(ws *websocket.Conn) {
 			}
 			break
 		}
-
+		log.Printf("Forwarding %s\n", message)
 		rsp, err = client.PostForm("http://localhost:8099/data",
 			url.Values{"id": {u4.String()}, "body": {message}})
 		if err != nil {
 			log.Println("error posting ::", err)
+			return
 		}
 		ioutil.ReadAll(rsp.Body)
 		rsp.Body.Close()

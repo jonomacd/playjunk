@@ -68,7 +68,7 @@ if (window["WebSocket"]) {
               var drawing = new Image();
               drawing.src = servOb[i].Image; 
               images[servOb[i].Id] = drawing;
-              //conn.send("ack:"+objId)
+              conn.send("ack:"+objId)
               //continue;
           }
 

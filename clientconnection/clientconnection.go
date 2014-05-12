@@ -30,9 +30,11 @@ func data(w http.ResponseWriter, r *http.Request) {
 	} else {
 		return
 	}
+	body := r.FormValue("body")
+	fmt.Println("got message: ", body)
 	um.Usermap[r.FormValue("id")].UserContext.Dataqueue.Push(
 		&pq.Item{
-			Value:    r.FormValue("body"),
+			Value:    body,
 			Priority: defaultpriority,
 		})
 

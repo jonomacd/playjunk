@@ -122,7 +122,7 @@ func (rs *RectangleStore) Inside(box *geom.Rect, coord *geom.Coord) []interface{
 	startY := int(y) / rs.Height
 	endY := int(yPrime) / rs.Height
 	dupMap := make(map[interface{}]bool)
-	for ii := startX; ii < endX; ii++ {
+	for ii := startX; ii <= endX; ii++ {
 		for jj := startY; jj < endY; jj++ {
 			//fmt.Printf("Index %v, %v\n", ii, jj)
 			if ii < 0 || jj < 0 || ii >= len(rs.Values) || jj >= len(rs.Values[0]) {

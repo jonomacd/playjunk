@@ -69,6 +69,7 @@ func main() {
 	fmt.Println(image.AddImage("resources/Nice-blue-background-Desktop-Wallpaper.jpg"))
 	fmt.Println(image.AddImage("resources/iceKing.png"))
 	fmt.Println(image.AddImage("resources/paula.jpg"))
+	fmt.Println(image.AddImage("resources/fakewario.gif"))
 
 	conErr := make(chan error)
 	go cc.Connect(conErr)

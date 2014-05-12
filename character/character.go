@@ -87,3 +87,7 @@ func (self *MainCharacter) Previous() *geom.Rect {
 func (self *MainCharacter) ClearDirty() {
 	self.DirtyMC = false
 }
+
+func (self *MainCharacter) AddToPanel(p *object.Panel) {
+	self.PanelMC = p
+}

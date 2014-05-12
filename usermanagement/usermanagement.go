@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jonomacd/playjunk/character"
 	"github.com/jonomacd/playjunk/draw"
+	"github.com/jonomacd/playjunk/gamestate"
 	"github.com/jonomacd/playjunk/image"
 	"github.com/jonomacd/playjunk/object"
 	pq "github.com/jonomacd/playjunk/priorityqueue"
@@ -106,10 +107,14 @@ func InsertUser(id string, name string) error {
 		mc.CoordMC = &geom.Coord{X: 20, Y: 20}
 		mc.ImageMC = image.Images["resources/iceKing.png"]
 		mc.SizeMC = &mc.ImageMC.Size
-		mc.ZMC = 1
+		mc.ZMC = 2
 		mc.PreviousLoc = mc.SizeMC
 		mc.DirtyMC = false
 		u.UserState.DrawState.Add(mc)
+
+		p := object.NewPanel()
+		p.SetCoord(&geom.Coord{X: 100.0, Y: 100.0})
+		p.PanelId = "HoldsPaula"
 
 		mc2 := &character.MainCharacter{}
 		mc2.IdMC = "Paula"
@@ -119,7 +124,16 @@ func InsertUser(id string, name string) error {
 		mc2.ZMC = 5
 		mc2.PreviousLoc = mc2.SizeMC
 		mc2.DirtyMC = true
-		u.UserState.DrawState.Add(mc2)
+
+		p.AddObject(mc2)
+
+		u.UserState.DrawState.Add(p)
+
+		b := gamestate.NewBoard()
+		b.InitialFill()
+		for _, bo := range b.GetObjects() {
+			u.UserState.DrawState.Add(bo)
+		}
 
 		// Initialize the game state (TODO)
 		u.UserState.GameState = "Not Implemented"
@@ -144,7 +158,7 @@ func DeleteUser(id string) error {
 }
 
 func CheckForData(id string) {
-	var p = make([]byte, 40)
+	var p = make([]byte, 500)
 	u := Usermap[id]
 	Usermap[id].Write(u.UserState.DrawState.MarshalToWire())
 	for {
@@ -179,15 +193,15 @@ func CheckForData(id string) {
 					crd := ob.Coord().Y
 					crd += 3
 					ob.SetCoord(&geom.Coord{X: ob.Coord().X, Y: crd})
-					u.UserState.DrawState.Objects["Paula"].(*character.MainCharacter).ZMC = 1
+					u.UserState.DrawState.Objects["Kirby"].(*character.MainCharacter).ZMC = 2
 					ob.(*character.MainCharacter).ZMC = 5
 				}
 				if dataArr[1] == "right" {
 					crd := ob.Coord().X
 					crd += 3
 					ob.SetCoord(&geom.Coord{X: crd, Y: ob.Coord().Y})
-					u.UserState.DrawState.Objects["Paula"].(*character.MainCharacter).ZMC = 5
-					ob.(*character.MainCharacter).ZMC = 1
+					u.UserState.DrawState.Objects["Kirby"].(*character.MainCharacter).ZMC = 5
+					ob.(*character.MainCharacter).ZMC = 2
 				}
 				if dataArr[1] == "left" {
 					crd := ob.Coord().X
@@ -205,6 +219,12 @@ func CheckForData(id string) {
 			}
 			if dataArr[0] == "im" {
 				Usermap[id].Write([]byte(`[{"Image":"` + u.UserState.DrawState.Objects["Ness"].Image().Url + `", "Id":"M"}]`))
+			}
+			if dataArr[0] == "ack" {
+				if len(dataArr) > 1 {
+					fmt.Println("ack for ", dataArr[1])
+					u.UserState.DrawState.Objects[dataArr[1]].SetCoord(u.UserState.DrawState.Objects[dataArr[1]].Coord())
+				}
 			}
 		}
 	}

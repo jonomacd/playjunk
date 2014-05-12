@@ -39,6 +39,19 @@ func (ds *DrawState) Add(o object.Object) error {
 		return fmt.Errorf("Cannot add object: ID not set")
 	}
 
+	if p, ok := o.(*object.Panel); ok {
+		var err error
+		for panelObject := range p.Contains {
+			err = ds.Add(p.Contains[panelObject])
+			if err != nil {
+				return err
+			}
+		}
+
+		return err
+
+	}
+
 	// Add to users map store
 	ds.Objects[o.Id()] = o
 
@@ -137,7 +150,9 @@ type DrawObject struct {
 func (ds *DrawState) GetDrawSet() []*DrawObject {
 	objects := make([]*DrawObject, 0)
 	dupmap := make(map[string]bool)
+
 	for _, obj := range ds.objectArr {
+		fmt.Println("checking: ", obj.Id(), obj.Dirty())
 		if obj.Dirty() {
 
 			do := &DrawObject{}
@@ -150,6 +165,7 @@ func (ds *DrawState) GetDrawSet() []*DrawObject {
 				objCast := interObj.(object.Object)
 				if !dupmap[objCast.Id()] && !objCast.Dirty() {
 
+					// Need to de-cruft this. It basically figures out what actually needs to be drawn
 					x1 := obj.Previous().Min.X
 					y1 := obj.Previous().Min.Y
 
@@ -165,10 +181,25 @@ func (ds *DrawState) GetDrawSet() []*DrawObject {
 					do.size = obj.Previous()
 
 					objects = append(objects, do)
+
+					x1 = obj.Coord().X
+					y1 = obj.Coord().Y
+
+					x = int(x1 - x2)
+					y = int(y1 - y2)
+					do2 := &DrawObject{}
+					do2.Object = objCast
+					do2.sx = x
+					do2.sy = y
+					do2.size = obj.Size()
+					objects = append(objects, do2)
+
 					dupmap[objCast.Id()] = true
 				}
 			}
-			obj.ClearDirty()
+			if obj.Previous() != nil {
+				obj.ClearDirty()
+			}
 		}
 	}
 	return objects
@@ -185,7 +216,7 @@ func (ds *DrawState) MarshalToWire() []byte {
 		m := make(map[string]interface{})
 		m["Image"] = o.Image().Url
 		fmt.Println(m)
-		m["Id"] = o.Image().Url
+		m["Id"] = o.Id()
 		m["SX"] = o.sx
 		m["SY"] = o.sy
 		m["SW"] = int(o.size.Width())

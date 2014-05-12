@@ -14,6 +14,7 @@ type Object interface {
 	Size() *geom.Rect
 	Animate() bool
 	Panel() *Panel
+	AddToPanel(*Panel)
 	Z() int
 	Image() *image.Image
 	Alpha() int
@@ -81,6 +82,10 @@ func (self *BlankObject) Visible() bool {
 	return false
 }
 
+func (self *BlankObject) AddToPanel(p *Panel) {
+	self.BlankPanel = p
+}
+
 func (self *BlankObject) Previous() *geom.Rect {
 	return self.BlankSize
 }
@@ -95,12 +100,14 @@ type Panel struct {
 	Pan         *Panel
 	PanelId     string
 	PreviousLoc *geom.Rect
+	Contains    []Object
 }
 
 func NewPanel() *Panel {
 	p := &Panel{
 		Position: geom.Coord{X: 0, Y: 0},
 		Depth:    0,
+		Contains: make([]Object, 0),
 	}
 	return p
 }
@@ -161,3 +168,13 @@ func (this *Panel) Previous() *geom.Rect {
 }
 
 func (this *Panel) ClearDirty() {}
+
+func (this *Panel) AddObject(o Object) {
+	o.AddToPanel(this)
+	this.Contains = append(this.Contains, o)
+}
+
+func (this *Panel) AddToPanel(p *Panel) {
+	this.Pan = p
+
+}
