@@ -2,9 +2,9 @@ package usermanagement
 
 import (
 	"fmt"
+	"github.com/jonomacd/jariowoods/gamestate"
 	"github.com/jonomacd/playjunk/character"
 	"github.com/jonomacd/playjunk/draw"
-	"github.com/jonomacd/playjunk/gamestate"
 	"github.com/jonomacd/playjunk/image"
 	"github.com/jonomacd/playjunk/object"
 	pq "github.com/jonomacd/playjunk/priorityqueue"
@@ -19,6 +19,12 @@ import (
 )
 
 var Usermap map[string]*User = make(map[string]*User)
+
+type Input struct {
+	Key int
+}
+
+type ControlFunc func([]*Input) ([]object.Object, error)
 
 type User struct {
 	Id          string
@@ -54,17 +60,22 @@ func (self *User) Read(p []byte) (n int, err error) {
 
 func (self *User) Write(p []byte) (n int, err error) {
 	tr := &http.Transport{
-		DisableCompression: true,
+		DisableCompression:    true,
+		ResponseHeaderTimeout: time.Millisecond * 100,
 	}
-	client := &http.Client{Transport: tr}
-	rsp, err := client.PostForm("http://localhost:8080/forward",
+	client := &http.Client{
+		Transport: tr,
+	}
+
+	log.Println(self.Id, string(p))
+	rsp, err := client.PostForm("http://localhost:8081/forward",
 		url.Values{"id": {self.Id}, "body": {string(p)}})
-	ioutil.ReadAll(rsp.Body)
-	rsp.Body.Close()
 	if err != nil {
 		log.Println("error forwarding ::", err)
 		return 0, err
 	}
+	ioutil.ReadAll(rsp.Body)
+	rsp.Body.Close()
 
 	return len(p), nil
 }

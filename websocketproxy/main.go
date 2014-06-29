@@ -4,11 +4,13 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"flag"
 	uuid "github.com/nu7hatch/gouuid"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"text/template"
+	"time"
 )
 
 var ConnectedClients map[string]*websocket.Conn = make(map[string]*websocket.Conn)
@@ -21,13 +23,25 @@ func main() {
 	rootDir := flag.String("dir", "../resources/", "resource directory")
 
 	flag.Parse()
+	servemux := http.NewServeMux()
+
+	s := &http.Server{}
+	s.ReadTimeout = time.Second
+	s.WriteTimeout = time.Second
 
 	homeTempl = template.Must(template.ParseFiles(*rootDir + "canvasPage.html"))
 	http.Handle("/inc/", http.StripPrefix("/inc/", http.FileServer(http.Dir(*rootDir))))
 	http.HandleFunc("/", homeHandler)
 	http.Handle("/ws", websocket.Handler(initialize))
-	http.HandleFunc("/forward", forward)
-	if err := http.ListenAndServe(*addr, nil); err != nil {
+	servemux.HandleFunc("/forward", forward)
+	s.Handler = servemux
+	s.Addr = ":8081"
+	go func() {
+		if err := http.ListenAndServe(*addr, nil); err != nil {
+			log.Fatal("ListenAndServeweb:", err)
+		}
+	}()
+	if err := s.ListenAndServe(); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
 }
@@ -82,6 +96,9 @@ func forward(w http.ResponseWriter, r *http.Request) {
 	body := r.FormValue("body")
 	log.Println("the body", body)
 	ConnectedClients[id].Write([]byte(body))
+	log.Println(r.Body.Close())
+	r.Close = true
+	io.WriteString(w, "\n")
 }
 
 func removeUser(id string) error {
